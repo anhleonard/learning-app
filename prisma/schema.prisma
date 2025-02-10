@@ -1,0 +1,150 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  TA
+  GUEST
+}
+
+enum Status {
+  ACTIVE
+  INACTIVE
+}
+
+enum PaymentStatus {
+  SAVED
+  SENT
+  PAID
+}
+
+enum Permission {
+  CREATE_USER
+  CREATE_STUDENT
+  CREATE_CLASS
+  CREATE_ATTENDANCE
+  CREATE_PAYMENT
+}
+
+model User {
+  id          Int          @id @default(autoincrement())
+  email       String       @unique
+  password    String
+  fullname    String
+  role        Role         @default(ADMIN)
+  permissions Permission[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  products           Product[] //may be removed
+  createdClasses     Student[] //user đã tạo ra những students nào
+  createdAttendances Attendance[] //user đã tạo ra những attendances nào
+}
+
+model Student {
+  id                Int      @id @default(autoincrement())
+  name              String
+  dob               DateTime
+  parent            String
+  phoneNumber       String
+  secondPhoneNumber String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  createdById Int
+  createdBy   User           @relation(fields: [createdById], references: [id])
+  classes     StudentClass[] //hs này đã và đang thuộc class nào
+  attendances Attendance[]
+  payments    Payment[]
+}
+
+model Class {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String
+  status      Status   @default(ACTIVE)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  students StudentClass[] //class này đã và đang có student nào
+  sessions Session[]
+}
+
+model StudentClass {
+  id        Int    @id @default(autoincrement())
+  studentId Int
+  classId   Int
+  status    Status
+
+  student Student @relation(fields: [studentId], references: [id])
+  class   Class   @relation(fields: [classId], references: [id])
+}
+
+model Session {
+  id          Int      @id @default(autoincrement())
+  sessionKey  String
+  description String
+  startTime   String // example: 14:00 - 16:00
+  endTime     String
+  amount      Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  classId     Int
+  class       Class        @relation(fields: [classId], references: [id])
+  attendances Attendance[]
+}
+
+model Attendance {
+  id             Int      @id @default(autoincrement())
+  isAttend       Boolean // hs đó có tham gia hay không
+  noteAttendance String // nếu nghỉ thì lý do gì
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  studentId   Int
+  student     Student @relation(fields: [studentId], references: [id])
+  sessionId   Int
+  session     Session @relation(fields: [sessionId], references: [id])
+  paymentId   Int
+  payment     Payment @relation(fields: [paymentId], references: [id])
+  createdById Int
+  createdBy   User    @relation(fields: [createdById], references: [id])
+}
+
+model Payment {
+  id               Int           @id @default(autoincrement())
+  totalSessions    Int
+  totalMonthAmount Int //tiền của tháng này
+  debt             Int // còn nợ bao nhiêu
+  totalPayment     Int // tổng phải trả = totalMonthAmount + debt
+  status           PaymentStatus @default(SAVED) // Sent, Paid, Saved
+  paymentNote      String // default: Sent via Zalo //maybe null
+  sentAt           DateTime // Sent lúc nào?? //chỉ update khi status = sent
+  updatedAt        DateTime      @updatedAt
+
+  studentId   Int
+  student     Student      @relation(fields: [studentId], references: [id])
+  attendances Attendance[]
+}
+
+model Product {
+  id          Int    @id @default(autoincrement())
+  name        String
+  description String
+  price       Float
+  userId      Int
+  user        User   @relation(fields: [userId], references: [id])
+}
