@@ -3,10 +3,10 @@ import { UsersService } from 'src/users/users.service';
 import * as bcrypt from 'bcrypt';
 import { User } from '@prisma/client';
 import { Response } from 'express';
-import * as ms from 'ms';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { TokenPayload } from './token-payload/token-payload.auth';
+import ms from 'ms';
 
 @Injectable()
 export class AuthService {
@@ -26,7 +26,9 @@ export class AuthService {
   async login(user: User, response: Response) {
     const expires = new Date();
     expires.setMilliseconds(
-      expires.getMilliseconds() + ms(this.configService.get('JWT_EXPIRATION')),
+      expires.getMilliseconds() +
+        //   ms(this.configService.get<number>('JWT_EXPIRATION')),
+        parseInt(this.configService.get<string>('JWT_EXPIRATION')) * 1000,
     );
 
     const tokenPayload: TokenPayload = {

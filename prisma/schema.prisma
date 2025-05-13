@@ -38,6 +38,21 @@ enum Permission {
   CREATE_PAYMENT
 }
 
+enum SessionKey {
+  SESSION_1
+  SESSION_2
+  SESSION_3
+  SESSION_4
+  SESSION_5
+  SESSION_6
+  SESSION_7
+}
+
+enum SessionStatus {
+  ACTIVE
+  CLOSED
+}
+
 model User {
   id          Int          @id @default(autoincrement())
   email       String       @unique
@@ -47,10 +62,14 @@ model User {
   permissions Permission[]
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
+  locked      Boolean      @default(false)
 
-  products           Product[] //may be removed
-  createdClasses     Student[] //user đã tạo ra những students nào
-  createdAttendances Attendance[] //user đã tạo ra những attendances nào
+  createdClasses Class[] //user đã tạo ra những class nào
+
+  createdStudents    Student[]    @relation(name: "StudentCreatedBy")
+  updatedStudents    Student[]    @relation(name: "StudentUpdatedBy")
+  createdAttendances Attendance[] @relation(name: "AttendanceCreatedBy") //user đã tạo ra những attendances nào
+  updatedAttendances Attendance[] @relation(name: "AttendanceUpdatedBy") //user đã update những attendances nào
 }
 
 model Student {
@@ -60,11 +79,15 @@ model Student {
   parent            String
   phoneNumber       String
   secondPhoneNumber String?
+  debt              Int      @default(0) // còn nợ bao nhiêu cho đến nay
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
   createdById Int
-  createdBy   User           @relation(fields: [createdById], references: [id])
+  createdBy   User  @relation(name: "StudentCreatedBy", fields: [createdById], references: [id])
+  updatedById Int?
+  updatedBy   User? @relation(name: "StudentUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
   classes     StudentClass[] //hs này đã và đang thuộc class nào
   attendances Attendance[]
   payments    Payment[]
@@ -80,27 +103,32 @@ model Class {
 
   students StudentClass[] //class này đã và đang có student nào
   sessions Session[]
+
+  createdById Int //ai tạo class này và lưu ý chỉ role admin mới được tạo class
+  createdBy   User @relation(fields: [createdById], references: [id])
 }
 
 model StudentClass {
-  id        Int    @id @default(autoincrement())
+  id        Int      @id @default(autoincrement())
   studentId Int
   classId   Int
   status    Status
+  createdAt DateTime @default(now()) //1 hs có thể chuyển đi chuyển lại giữa các lớp thì nên có time để phân biệt vào lúc nào, ra lúc nào
+  updatedAt DateTime @updatedAt
 
   student Student @relation(fields: [studentId], references: [id])
   class   Class   @relation(fields: [classId], references: [id])
 }
 
 model Session {
-  id          Int      @id @default(autoincrement())
-  sessionKey  String
-  description String
-  startTime   String // example: 14:00 - 16:00
-  endTime     String
-  amount      Int
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         Int           @id @default(autoincrement())
+  sessionKey SessionKey
+  startTime  String // example: 14:00 - 16:00
+  endTime    String
+  amount     Int
+  status     SessionStatus @default(ACTIVE)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
 
   classId     Int
   class       Class        @relation(fields: [classId], references: [id])
@@ -111,40 +139,35 @@ model Attendance {
   id             Int      @id @default(autoincrement())
   isAttend       Boolean // hs đó có tham gia hay không
   noteAttendance String // nếu nghỉ thì lý do gì
-  createdAt      DateTime @default(now())
+  createdAt      DateTime @default(now()) // đây là ngày học
   updatedAt      DateTime @updatedAt
 
-  studentId   Int
-  student     Student @relation(fields: [studentId], references: [id])
-  sessionId   Int
-  session     Session @relation(fields: [sessionId], references: [id])
-  paymentId   Int
-  payment     Payment @relation(fields: [paymentId], references: [id])
+  studentId Int
+  student   Student  @relation(fields: [studentId], references: [id])
+  sessionId Int
+  session   Session  @relation(fields: [sessionId], references: [id])
+  paymentId Int?
+  payment   Payment? @relation(fields: [paymentId], references: [id])
+
   createdById Int
-  createdBy   User    @relation(fields: [createdById], references: [id])
+  createdBy   User  @relation(name: "AttendanceCreatedBy", fields: [createdById], references: [id])
+  updatedById Int?
+  updatedBy   User? @relation(name: "AttendanceUpdatedBy", fields: [updatedById], references: [id])
 }
 
 model Payment {
   id               Int           @id @default(autoincrement())
   totalSessions    Int
-  totalMonthAmount Int //tiền của tháng này
-  debt             Int // còn nợ bao nhiêu
-  totalPayment     Int // tổng phải trả = totalMonthAmount + debt
+  totalMonthAmount Int // tiền của tháng này
+  totalPayment     Int // tổng phải trả = totalMonthAmount + debt (lấy ở student)
+  paidPayment      Int? // số tiền đã trả
   status           PaymentStatus @default(SAVED) // Sent, Paid, Saved
-  paymentNote      String // default: Sent via Zalo //maybe null
-  sentAt           DateTime // Sent lúc nào?? //chỉ update khi status = sent
+  paymentNote      String        @default("") // default: Sent via Zalo //maybe null
+  sentAt           DateTime? // Sent lúc nào?? //chỉ update khi status = sent
+  createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
 
   studentId   Int
   student     Student      @relation(fields: [studentId], references: [id])
   attendances Attendance[]
-}
-
-model Product {
-  id          Int    @id @default(autoincrement())
-  name        String
-  description String
-  price       Float
-  userId      Int
-  user        User   @relation(fields: [userId], references: [id])
 }

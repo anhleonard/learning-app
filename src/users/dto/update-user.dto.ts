@@ -1,32 +1,27 @@
 import {
   IsArray,
-  IsEmail,
-  IsEnum,
+  IsBoolean,
   IsNotEmpty,
+  IsNumber,
   IsOptional,
   IsString,
 } from 'class-validator';
 import { Permission } from 'src/utils/enums';
-import { Role } from 'src/utils/enums';
 
-export class CreateUserDto {
-  @IsString()
+export class UpdateUserDto {
+  @IsNumber()
   @IsNotEmpty()
-  fullname: string;
-
-  @IsEmail()
-  @IsNotEmpty()
-  email: string;
+  id: number;
 
   @IsString()
-  @IsNotEmpty()
-  password: string;
-
-  @IsEnum(Role)
   @IsOptional()
-  role: Role;
+  fullname: string;
 
   @IsArray()
   @IsOptional()
   permissions: Permission[];
+
+  @IsBoolean()
+  @IsOptional()
+  locked: boolean;
 }

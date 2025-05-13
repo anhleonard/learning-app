@@ -5,9 +5,13 @@ import { UsersModule } from './users/users.module';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
-import { ProductsModule } from './products/products.module';
 import { StudentsModule } from './students/students.module';
-import { ClassModule } from './class/class.module';
+import { ClassesModule } from './classes/classes.module';
+import { SessionsModule } from './sessions/sessions.module';
+import { AttendancesModule } from './attendances/attendances.module';
+import { PaymentsModule } from './payments/payments.module';
+import { QueueModule } from './queue/queue.module';
+import { HistoriesModule } from './histories/histories.module';
 
 @Module({
   imports: [
@@ -15,9 +19,13 @@ import { ClassModule } from './class/class.module';
     ConfigModule.forRoot(),
     PrismaModule,
     AuthModule,
-    ProductsModule,
     StudentsModule,
-    ClassModule,
+    ClassesModule,
+    SessionsModule,
+    AttendancesModule,
+    PaymentsModule,
+    QueueModule,
+    HistoriesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -7,26 +7,30 @@ import {
   IsString,
 } from 'class-validator';
 
-export class CreateStudentDto {
+export class UpdateStudentDto {
+  @IsNumber()
+  @IsNotEmpty()
+  id: number;
+
   @IsNumber()
   @IsNotEmpty()
   classId: number;
 
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   name: string;
 
   @Transform(({ value }) => value && new Date(value))
   @IsDate()
-  @IsNotEmpty()
+  @IsOptional()
   dob: Date;
 
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   parent: string;
 
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   phoneNumber: string;
 
   @IsString()

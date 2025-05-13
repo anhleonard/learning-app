@@ -10,5 +10,3 @@ export const CurrentUser = createParamDecorator(
     return user;
   },
 );
-
-export const Roles = (...roles: string[]) => SetMetadata('roles', roles);
